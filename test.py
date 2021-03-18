@@ -23,6 +23,7 @@ from allennlp_models.rc.models import BidirectionalAttentionFlow
 from allennlp_models.rc.dataset_readers import SquadReader
 from allennlp.data.token_indexers import SingleIdTokenIndexer, TokenCharactersIndexer
 from allennlp.data.data_loaders import SimpleDataLoader
+from allennlp.training.util import evaluate
 
 
 # pretrained_mdls = pretrained.get_pretrained_models()
@@ -30,7 +31,7 @@ from allennlp.data.data_loaders import SimpleDataLoader
 
 
 data_dir = "data/"
-squad_ver=2.0
+squad_ver=1.1
 
 train_data_filename = "train-v"+str(squad_ver)+".json"
 dev_data_filename = "dev-"+str(squad_ver)+".json"
@@ -75,11 +76,13 @@ else:
 
 instances = dataset_reader.read(dev_data_path)
 
-tmp = True
+instance = []
+count = 0
 for i in instances:
-    if tmp:
-        tmp = False
-        instance = i
+    if len(instance) < 2:
+        count += 1
+        if count == 8 or count == 123:
+            instance.append(i)
     else:
         break
 print(instance)
@@ -89,8 +92,17 @@ print(instance)
 #        print(instance)
 
 bidaf_mdl = bidaf_pred._model
-# pdb.set_trace()
+
+from allennlp.data.batch import Batch
+
+dataset = Batch(instance)
+dataset.index_instances(bidaf_mdl.vocab)
+mdl_input = dataset.as_tensor_dict()
+
+output = bidaf_mdl(mdl_input['question'], mdl_input['passage'])
 # scratch_bidaf_mdl = BidirectionalAttentionFlow()
+
+# pdb.set_trace()
 
 
 def run_training_loop(model, dataset_reader, train_data_path, dev_data_path):
@@ -148,5 +160,18 @@ def build_trainer(
     return trainer
 
 # pdb.set_trace()
-run_training_loop(bidaf_mdl, dataset_reader, dev_data_path, dev_data_path)
+run_training_loop(bidaf_mdl, dataset_reader, train_data_path, dev_data_path)
+
+# bidaf_pred._model = bidaf_mdl
+
+dev_data = list(dataset_reader.read(dev_data_path))
+_, dev_loader = build_data_loaders(dev_data, dev_data)
+dev_loader.index_with(bidaf_mdl.vocab)
+
+results = evaluate(bidaf_mdl, dev_loader)
+
+# Pretrained model: start_acc: 0.30, end_acc: 0.31, span_acc: 0.20, em: 0.27, f1: 0.41, loss: 7.04 ||: : 1322it [05:46,  3.82it/s]
+# Trained one epoch: start_acc: 0.53, end_acc: 0.57, span_acc: 0.44, em: 0.53, f1: 0.65, loss: 3.39 ||: : 1322it [05:57,  3.70it/s]
+
+
 pdb.set_trace()
