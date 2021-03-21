@@ -38,7 +38,7 @@ class BidirectionalAttentionFlowDistill(BidirectionalAttentionFlow):
 
         super().__init__(vocab, text_field_embedder, num_highway_layers,
                          phrase_layer, matrix_attention, modeling_layer,
-                         span_end_decoder, dropout, mask_lstms, initializer, regularizer)
+                         span_end_encoder, dropout, mask_lstms, initializer, regularizer)
 
         self.distill_weight = distill_weight
 
