@@ -112,53 +112,54 @@ def build_trainer(
     print("Will train for", num_epochs, "epochs")
     return trainer
 
-# define parameters
-data_dir = "data/"
-squad_ver=1.1
+if __name__=="__main__":
+    # define parameters
+    data_dir = "data/"
+    squad_ver=1.1
 
-save_dir = "tmp/"
-num_epochs = 2
-batch_size = 32
-learning_rate = 0.001
-cuda_device = None
+    save_dir = "tmp/"
+    num_epochs = 1
+    batch_size = 32
+    learning_rate = 0.001
+    cuda_device = None
 
-# download data and load
-train_data_path, dev_data_path = download_data(data_dir, squad_ver)
-train_data, dev_data = load_data(train_data_path, dev_data_path, squad_ver)
-train_loader, dev_loader = build_data_loaders(train_data, dev_data, batch_size)
+    # download data and load
+    train_data_path, dev_data_path = download_data(data_dir, squad_ver)
+    train_data, dev_data = load_data(train_data_path, dev_data_path, squad_ver)
+    train_loader, dev_loader = build_data_loaders(train_data, dev_data, batch_size)
 
-# load pretrained model
-print("Loading model")
-bidaf_pred = pretrained.load_predictor("rc-bidaf")
-model = bidaf_pred._model
+    # load pretrained model
+    print("Loading model")
+    bidaf_pred = pretrained.load_predictor("rc-bidaf")
+    model = bidaf_pred._model
 
-# index with vocab
-print("Indexing")
-tic = time.time()
+    # index with vocab
+    print("Indexing")
+    tic = time.time()
 
-train_loader.index_with(model.vocab)
-dev_loader.index_with(model.vocab)
+    train_loader.index_with(model.vocab)
+    dev_loader.index_with(model.vocab)
 
-print("Time elapsed:", time.time()-tic)
+    print("Time elapsed:", time.time()-tic)
 
-# build trainer
-print("Building trainer")
-# trainer = build_trainer(model, save_dir, train_loader, dev_loader, num_epochs)
-trainer = build_trainer(model, save_dir, train_loader, dev_loader, num_epochs, learning_rate, cuda_device)
+    # build trainer
+    print("Building trainer")
+    # trainer = build_trainer(model, save_dir, train_loader, dev_loader, num_epochs)
+    trainer = build_trainer(model, save_dir, train_loader, dev_loader, num_epochs, learning_rate, cuda_device)
 
-# train
-print("Starting training")
-tic = time.time()
+    # train
+    print("Starting training")
+    tic = time.time()
 
-trainer.train()
+    trainer.train()
 
-print("Finished training")
-print("Time elapsed:", time.time()-tic)
+    print("Finished training")
+    print("Time elapsed:", time.time()-tic)
 
-# evaluate trained model
-results = evaluate(model, dev_loader)
+    # evaluate trained model
+    results = evaluate(model, dev_loader)
 
-# Pretrained model: start_acc: 0.30, end_acc: 0.31, span_acc: 0.20, em: 0.27, f1: 0.41, loss: 7.04 ||: : 1322it [05:46,  3.82it/s]
-# Trained one epoch: start_acc: 0.53, end_acc: 0.57, span_acc: 0.44, em: 0.53, f1: 0.65, loss: 3.39 ||: : 1322it [05:57,  3.70it/s]
+    # Pretrained model: start_acc: 0.30, end_acc: 0.31, span_acc: 0.20, em: 0.27, f1: 0.41, loss: 7.04 ||: : 1322it [05:46,  3.82it/s]
+    # Trained one epoch: start_acc: 0.53, end_acc: 0.57, span_acc: 0.44, em: 0.53, f1: 0.65, loss: 3.39 ||: : 1322it [05:57,  3.70it/s]
 
-pdb.set_trace()
+    pdb.set_trace()
