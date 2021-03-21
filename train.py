@@ -62,12 +62,12 @@ def download_data(data_dir, squad_ver):
 
     return train_data_path, dev_data_path
 
-def load_data(train_data_path, dev_data_path, squad_ver):
+def load_data(train_data_path, dev_data_path, squad_ver, start_tokens=None, end_tokens=None):
     token_indexers = {'token_characters': TokenCharactersIndexer(), 'tokens': SingleIdTokenIndexer()}
     if squad_ver==1.1:
-        dataset_reader = SquadReader.squad1(token_indexers=token_indexers)
+        dataset_reader = SquadReader.squad1(token_indexers=token_indexers, start_tokens=start_tokens, end_tokens=end_tokens)
     elif squad_ver==2.0:
-        dataset_reader = SquadReader.squad2(token_indexers=token_indexers)
+        dataset_reader = SquadReader.squad2(token_indexers=token_indexers, start_tokens=start_tokens, end_tokens=end_tokens)
     else:
         raise
 
@@ -142,7 +142,7 @@ if __name__=="__main__":
     num_epochs = args.num_epochs
     batch_size = args.batch_size
     learning_rate = args.learning_rate
-    if args.cuda_device:
+    if args.cuda_device is not None:
         cuda_device = int(args.cuda_device)
     else:
         cuda_device = None
@@ -182,7 +182,8 @@ if __name__=="__main__":
                                               copy.deepcopy(model._modeling_layer),
                                               copy.deepcopy(model._span_end_encoder),
                                               mask_lstms = copy.deepcopy(model._mask_lstms),
-                                              regularizer = copy.deepcopy(model._regularizer)
+                                              regularizer = copy.deepcopy(model._regularizer),
+                                              distill_weight = distill_weight
                                               )
 
         distill_model._highway_layer = copy.deepcopy(model._highway_layer)
