@@ -8,27 +8,32 @@ def get_distill_loss(span_start_logits, span_end_logits, span_start_teacher_logi
     """
     Computes distill loss based on teacher logits
     """
-    distill_loss = None
+    distill_loss = 0
 
     return distill_loss
 
 class BidirectionalAttentionFlowDistill(BidirectionalAttentionFlow):
-    #def __init__(
-    #    self,
-    #    vocab: Vocabulary,
-    #    text_field_embedder: TextFieldEmbedder,
-    #    num_highway_layers: int,
-    #    phrase_layer: Seq2SeqEncoder,
-    #    matrix_attention: MatrixAttention,
-    #    modeling_layer: Seq2SeqEncoder,
-    #    span_end_encoder: Seq2SeqEncoder,
-    #    dropout: float = 0.2,
-    #    mask_lstms: bool = True,
-    #    initializer: InitializerApplicator = InitializerApplicator(),
-    #    regularizer: Optional[RegularizerApplicator] = None,
-    #) -> None:
+    def __init__(
+        self,
+        vocab: Vocabulary,
+        text_field_embedder: TextFieldEmbedder,
+        num_highway_layers: int,
+        phrase_layer: Seq2SeqEncoder,
+        matrix_attention: MatrixAttention,
+        modeling_layer: Seq2SeqEncoder,
+        span_end_encoder: Seq2SeqEncoder,
+        dropout: float = 0.2,
+        mask_lstms: bool = True,
+        initializer: InitializerApplicator = InitializerApplicator(),
+        regularizer: Optional[RegularizerApplicator] = None,
+        distill_weight: float = 1
+    ) -> None:
 
-    #    super().__init__()
+        super().__init__(vocab, text_field_embedder, num_highway_layers,
+                         phrase_layer, matrix_attention, modeling_layer,
+                         span_end_decoder, dropout, mask_lstms, initializer, regularizer)
+
+        self.distill_weight = distill_weight
 
     def forward(  # type: ignore
         self,
@@ -48,7 +53,8 @@ class BidirectionalAttentionFlowDistill(BidirectionalAttentionFlow):
             span_start_logits = output_dict["span_start_logits"]
             span_end_logits = output_dict["span_end_logits"]
 
-            distill_loss = get_distill_loss(span_start_logits, span_end_logits, span_start_teacher_logits, span_end_teacher_logits)
+            distill_loss = self.distill_weight * get_distill_loss(span_start_logits, span_end_logits,
+                                                                  span_start_teacher_logits, span_end_teacher_logits)
 
             output_dict["loss"] += distill_loss
 

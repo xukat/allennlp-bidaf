@@ -132,38 +132,39 @@ for i in instances:
         break
 print(instance)
 
-# pdb.set_trace()
-#for instance in instances[:10]:
-#        print(instance)
+pdb.set_trace()
+# for instance in list(instances)[:10]:
+#         print(instance)
 
 bidaf_mdl = bidaf_pred._model
 
-# from allennlp.data.batch import Batch
+from allennlp.data.batch import Batch
 
-# dataset = Batch(instance)
-# dataset.index_instances(bidaf_mdl.vocab)
-# mdl_input = dataset.as_tensor_dict()
+dataset = Batch(instance)
+dataset.index_instances(bidaf_mdl.vocab)
+mdl_input = dataset.as_tensor_dict()
 
 # output = bidaf_mdl(mdl_input['question'], mdl_input['passage'])
+output = bidaf_mdl(**mdl_input)
 # scratch_bidaf_mdl = BidirectionalAttentionFlow()
 
 
-print("Reading data...")
-tic = time.time()
-train_data = list(dataset_reader.read(train_data_path))
-dev_data = list(dataset_reader.read(dev_data_path))
-print("Time elapsed:", time.time()-tic)
-
-train_loader, dev_loader = build_data_loaders(train_data, dev_data)
-
-train_loader.index_with(bidaf_mdl.vocab)
-dev_loader.index_with(bidaf_mdl.vocab)
-
-# pdb.set_trace()
-run_training_loop(bidaf_mdl, train_loader, dev_loader, save_dir)
-
-
-results = evaluate(bidaf_mdl, dev_loader)
+# print("Reading data...")
+# tic = time.time()
+# train_data = list(dataset_reader.read(train_data_path))
+# dev_data = list(dataset_reader.read(dev_data_path))
+# print("Time elapsed:", time.time()-tic)
+# 
+# train_loader, dev_loader = build_data_loaders(train_data, dev_data)
+# 
+# train_loader.index_with(bidaf_mdl.vocab)
+# dev_loader.index_with(bidaf_mdl.vocab)
+# 
+# # pdb.set_trace()
+# run_training_loop(bidaf_mdl, train_loader, dev_loader, save_dir)
+# 
+# 
+# results = evaluate(bidaf_mdl, dev_loader)
 
 # Pretrained model: start_acc: 0.30, end_acc: 0.31, span_acc: 0.20, em: 0.27, f1: 0.41, loss: 7.04 ||: : 1322it [05:46,  3.82it/s]
 # Trained one epoch: start_acc: 0.53, end_acc: 0.57, span_acc: 0.44, em: 0.53, f1: 0.65, loss: 3.39 ||: : 1322it [05:57,  3.70it/s]
