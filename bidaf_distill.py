@@ -1,4 +1,11 @@
 from typing import Dict, List, Tuple, Optional, Any
+from allennlp.data import Vocabulary
+from allennlp.models.model import Model
+from allennlp.modules import Highway
+from allennlp.modules import Seq2SeqEncoder, TimeDistributed, TextFieldEmbedder
+from allennlp.modules.matrix_attention import MatrixAttention
+from allennlp.nn import util, InitializerApplicator, RegularizerApplicator
+
 from allennlp_models.rc.models import BidirectionalAttentionFlow
 
 import torch

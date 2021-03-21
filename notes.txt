@@ -1,0 +1,22 @@
+structure of squad data
+
+data = json.load(open(path_to_data))
+
+context: data['data'][article_no]['paragraphs'][paragraph_no]['context']
+-> string
+
+qas: data['data'][article_no]['paragraphs'][paragraph_no]['qas']
+-> list of qas associated with the context
+-> each element is dict with keys "answers" "question" and "id"
+--> answers is a list of dicts with keys "answer_start" and "text"
+--> question is a string
+--> id is a string
+
+Todo
+Get logits from bert to bidaf
+	Save data
+	Modify data reader
+Add loss function to bidafdistill class
+Add gpu support ?
+Train 
+

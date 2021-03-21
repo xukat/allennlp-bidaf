@@ -2,6 +2,8 @@ import os
 import json
 import requests
 import time
+import argparse
+import copy
 
 import pdb
 
@@ -25,6 +27,7 @@ from allennlp_models import pretrained
 from allennlp_models.rc.models import BidirectionalAttentionFlow
 from allennlp_models.rc.dataset_readers import SquadReader
 
+from bidaf_distill import BidirectionalAttentionFlowDistill
 
 def download_data(data_dir, squad_ver):
     train_data_filename = "train-v"+str(squad_ver)+".json"
@@ -113,15 +116,51 @@ def build_trainer(
     return trainer
 
 if __name__=="__main__":
-    # define parameters
-    data_dir = "data/"
-    squad_ver=1.1
 
-    save_dir = "tmp/"
-    num_epochs = 1
-    batch_size = 32
-    learning_rate = 0.001
-    cuda_device = None
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("--squad_ver", type=float, default=1.1)
+    parser.add_argument("--data_dir", default="data/")
+    parser.add_argument("--save_dir", default="tmp/")
+    parser.add_argument("--num_epochs", type=int, default=1)
+    parser.add_argument("--batch_size", type=int, default=32)
+    parser.add_argument("--learning_rate", type=float, default=0.001)
+    parser.add_argument("--cuda_device", default=None)
+
+    parser.add_argument("--distill", action="store_true")
+    parser.add_argument("--distill_weight", type=float, default=1)
+
+    args = parser.parse_args()
+
+    # pdb.set_trace()
+
+    # define parameters
+    data_dir = args.data_dir
+    squad_ver = args.squad_ver
+
+    save_dir = args.save_dir
+    num_epochs = args.num_epochs
+    batch_size = args.batch_size
+    learning_rate = args.learning_rate
+    if args.cuda_device:
+        cuda_device = int(args.cuda_device)
+    else:
+        cuda_device = None
+
+    if args.distill:
+        distill_weight = args.distill_weight
+
+    # pdb.set_trace()
+
+    # define parameters
+    # data_dir = "data/"
+    # squad_ver=1.1
+
+    # save_dir = "tmp/"
+    # num_epochs = 1
+    # batch_size = 32
+    # learning_rate = 0.001
+    # cuda_device = None
 
     # download data and load
     train_data_path, dev_data_path = download_data(data_dir, squad_ver)
@@ -132,6 +171,22 @@ if __name__=="__main__":
     print("Loading model")
     bidaf_pred = pretrained.load_predictor("rc-bidaf")
     model = bidaf_pred._model
+
+    # if doing distillation, change model class
+    if args.distill:
+        distill_model = BidirectionalAttentionFlowDistill(model.vocab,
+                                              copy.deepcopy(model._text_field_embedder),
+                                              2,
+                                              copy.deepcopy(model._phrase_layer),
+                                              copy.deepcopy(model._matrix_attention),
+                                              copy.deepcopy(model._modeling_layer),
+                                              copy.deepcopy(model._span_end_encoder),
+                                              mask_lstms = copy.deepcopy(model._mask_lstms),
+                                              regularizer = copy.deepcopy(model._regularizer)
+                                              )
+
+        distill_model._highway_layer = copy.deepcopy(model._highway_layer)
+        model = distill_model
 
     # index with vocab
     print("Indexing")
