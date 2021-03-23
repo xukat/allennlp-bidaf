@@ -29,7 +29,7 @@ from allennlp_models import pretrained
 from allennlp_models.rc.models import BidirectionalAttentionFlow
 from allennlp_models.rc.dataset_readers import SquadReader
 
-from bidaf_distill import BidirectionalAttentionFlowDistill
+from bidaf_distill import BidirectionalAttentionFlowDistill, SquadReaderDistill
 
 def download_data(data_dir, squad_ver):
     train_data_filename = "train-v"+str(squad_ver)+".json"
