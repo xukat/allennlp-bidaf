@@ -19,6 +19,8 @@ from allennlp.models import Model
 from allennlp.training.trainer import GradientDescentTrainer, Trainer
 from allennlp.training.optimizers import AdamOptimizer
 
+from allennlp.data.tokenizers import Token, Tokenizer, SpacyTokenizer
+
 from allennlp.data.token_indexers import SingleIdTokenIndexer, TokenCharactersIndexer
 from allennlp.data.data_loaders import SimpleDataLoader
 from allennlp.training.util import evaluate
@@ -62,12 +64,20 @@ def download_data(data_dir, squad_ver):
 
     return train_data_path, dev_data_path
 
-def load_data(train_data_path, dev_data_path, squad_ver, start_tokens=None, end_tokens=None):
+def load_data(train_data_path, dev_data_path, squad_ver, distill=False):
     token_indexers = {'token_characters': TokenCharactersIndexer(), 'tokens': SingleIdTokenIndexer()}
+    # tokenizer = SpacyTokenizer(start_tokens=start_tokens, end_tokens=end_tokens)
+    tokenizer = SpacyTokenizer()
+
+    if distill:
+        Reader = SquadReaderDistill
+    else:
+        Reader = SquadReader
+
     if squad_ver==1.1:
-        dataset_reader = SquadReader.squad1(token_indexers=token_indexers, start_tokens=start_tokens, end_tokens=end_tokens)
+        dataset_reader = Reader.squad1(tokenizer=tokenizer, token_indexers=token_indexers)
     elif squad_ver==2.0:
-        dataset_reader = SquadReader.squad2(token_indexers=token_indexers, start_tokens=start_tokens, end_tokens=end_tokens)
+        dataset_reader = Reader.squad2(tokenizer=tokenizer, token_indexers=token_indexers)
     else:
         raise
 
@@ -125,7 +135,7 @@ if __name__=="__main__":
     parser.add_argument("--num_epochs", type=int, default=1)
     parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--learning_rate", type=float, default=0.001)
-    parser.add_argument("--cuda_device", default=None)
+    parser.add_argument("--cuda_device", type=int, default=-1)
 
     parser.add_argument("--distill", action="store_true")
     parser.add_argument("--distill_weight", type=float, default=1)
@@ -142,12 +152,13 @@ if __name__=="__main__":
     num_epochs = args.num_epochs
     batch_size = args.batch_size
     learning_rate = args.learning_rate
-    if args.cuda_device is not None:
-        cuda_device = int(args.cuda_device)
-    else:
-        cuda_device = None
-
-    if args.distill:
+    # if args.cuda_device is not None:
+    #     cuda_device = int(args.cuda_device)
+    # else:
+    #     cuda_device = None
+    cuda_device = args.cuda_device
+    distill = args.distill
+    if distill:
         distill_weight = args.distill_weight
 
     # pdb.set_trace()
@@ -164,30 +175,16 @@ if __name__=="__main__":
 
     # download data and load
     train_data_path, dev_data_path = download_data(data_dir, squad_ver)
-    train_data, dev_data = load_data(train_data_path, dev_data_path, squad_ver)
+    train_data, dev_data = load_data(train_data_path, dev_data_path, squad_ver, distill)
     train_loader, dev_loader = build_data_loaders(train_data, dev_data, batch_size)
 
     # load pretrained model
     print("Loading model")
-    bidaf_pred = pretrained.load_predictor("rc-bidaf")
-    model = bidaf_pred._model
-
-    # if doing distillation, change model class
     if args.distill:
-        distill_model = BidirectionalAttentionFlowDistill(model.vocab,
-                                              copy.deepcopy(model._text_field_embedder),
-                                              2,
-                                              copy.deepcopy(model._phrase_layer),
-                                              copy.deepcopy(model._matrix_attention),
-                                              copy.deepcopy(model._modeling_layer),
-                                              copy.deepcopy(model._span_end_encoder),
-                                              mask_lstms = copy.deepcopy(model._mask_lstms),
-                                              regularizer = copy.deepcopy(model._regularizer),
-                                              distill_weight = distill_weight
-                                              )
-
-        distill_model._highway_layer = copy.deepcopy(model._highway_layer)
-        model = distill_model
+        model = BidirectionalAttentionFlowDistill.from_pretrained(distill_weight)
+    else:
+        bidaf_pred = pretrained.load_predictor("rc-bidaf")
+        model = bidaf_pred._model
 
     # index with vocab
     print("Indexing")
@@ -200,7 +197,6 @@ if __name__=="__main__":
 
     # build trainer
     print("Building trainer")
-    # trainer = build_trainer(model, save_dir, train_loader, dev_loader, num_epochs)
     trainer = build_trainer(model, save_dir, train_loader, dev_loader, num_epochs, learning_rate, cuda_device)
 
     # train
@@ -215,7 +211,7 @@ if __name__=="__main__":
     # evaluate trained model
     print("Evaluating")
     tic = time.time()
-    results = evaluate(model, dev_loader, cuda_device, metrics_output_file=None, predictions_output_file=None)
+    results = evaluate(model, dev_loader, cuda_device, output_file=None, predictions_output_file=None)
     print("Time elapsed:", time.time()-tic)
 
     # batch size = 8

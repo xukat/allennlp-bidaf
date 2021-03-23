@@ -20,3 +20,24 @@ Add loss function to bidafdistill class
 Add gpu support ?
 Train 
 
+
+# batch size = 8
+# Pretrained model: start_acc: 0.30, end_acc: 0.31, span_acc: 0.20, em: 0.27, f1: 0.41, loss: 7.04 ||: : 1322it [05:46,  3.82it/s]
+# Trained one epoch: start_acc: 0.53, end_acc: 0.57, span_acc: 0.44, em: 0.53, f1: 0.65, loss: 3.39 ||: : 1322it [05:57,  3.70it/s]
+
+# batch size = 32
+# pretrained: start_acc: 0.30, end_acc: 0.31, span_acc: 0.20, em: 0.27, f1: 0.41, loss: 7.04 ||: : 331it [05:41,  1.03s/it]
+# trained one epoch: start_acc: 0.54, end_acc: 0.58, span_acc: 0.46, em: 0.57, f1: 0.67, loss: 3.19 ||: : 331it [03:52,  1.42it/s]
+
+folder : train-5-epoch
+	train epoch 2:	start_acc: 0.5822, end_acc: 0.6326, span_acc: 0.4911, em: 0.5429, f1: 0.6811, batch_loss: 2.7388, loss: 2.7273 ||: 100%|##########| 2738/2738 [10:53:41<00:00, 14.32s/it]
+	val epoch 2:	start_acc: 0.5535, end_acc: 0.5924, span_acc: 0.4696, em: 0.5827, f1: 0.6878, batch_loss: 3.7573, loss: 3.1853 ||: 100%|##########| 331/331 [04:15<00:00,  1.30it/s]
+	
+	train epoch 3:	start_acc: 0.6046, end_acc: 0.6549, span_acc: 0.5133, em: 0.5663, f1: 0.7039, batch_loss: 3.8442, loss: 2.5290 ||: 100%|##########| 2738/2738 [6:44:36<00:00,  8.87s/it]
+	val epoch 3:	start_acc: 0.5552, end_acc: 0.5897, span_acc: 0.4715, em: 0.5842, f1: 0.6860, batch_loss: 3.8719, loss: 3.1517 ||: 100%|##########| 331/331 [04:19<00:00,  1.27it/s]
+	
+	train epoch 4:	start_acc: 0.6204, end_acc: 0.6746, span_acc: 0.5297, em: 0.5825, f1: 0.7216, batch_loss: 2.1268, loss: 2.3737 ||: 100%|##########| 2738/2738 [6:44:20<00:00,  8.86s/it]
+	val epoch 4:	start_acc: 0.5496, end_acc: 0.5938, span_acc: 0.4696, em: 0.5798, f1: 0.6840, batch_loss: 5.1634, loss: 3.2744 ||: 100%|##########| 331/331 [04:23<00:00,  1.26it/s]
+	
+	train epoch 5:	start_acc: 0.6363, end_acc: 0.6908, span_acc: 0.5457, em: 0.5997, f1: 0.7377, batch_loss: 0.9865, loss: 2.2416 ||: 100%|##########| 2738/2738 [6:45:06<00:00,  8.88s/it]
+	val epoch 5:	start_acc: 0.5535, end_acc: 0.5904, span_acc: 0.4690, em: 0.5807, f1: 0.6851, batch_loss: 5.3856, loss: 3.2990 ||: 100%|##########| 331/331 [04:20<00:00,  1.27it/s]
