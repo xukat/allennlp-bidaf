@@ -1,3 +1,4 @@
 allennlp
 allennlp-models
 spacy==2.3.5
+nltk==3.5
