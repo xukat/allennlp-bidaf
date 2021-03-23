@@ -186,6 +186,10 @@ if __name__=="__main__":
         bidaf_pred = pretrained.load_predictor("rc-bidaf")
         model = bidaf_pred._model
 
+    # move to gpu if using
+    if cuda_device >= 0:
+        model.cuda(cuda_device)
+
     # index with vocab
     print("Indexing")
     tic = time.time()
