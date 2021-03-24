@@ -139,6 +139,7 @@ if __name__=="__main__":
 
     parser.add_argument("--distill", action="store_true")
     parser.add_argument("--distill_weight", type=float, default=1)
+    parser.add_argument("--temperature", type=float, default=1)
 
     args = parser.parse_args()
 
@@ -149,17 +150,15 @@ if __name__=="__main__":
     squad_ver = args.squad_ver
 
     save_dir = args.save_dir
+
     num_epochs = args.num_epochs
     batch_size = args.batch_size
     learning_rate = args.learning_rate
-    # if args.cuda_device is not None:
-    #     cuda_device = int(args.cuda_device)
-    # else:
-    #     cuda_device = None
+
     cuda_device = args.cuda_device
     distill = args.distill
-    if distill:
-        distill_weight = args.distill_weight
+    distill_weight = args.distill_weight
+    temperature = args.temperature
 
     # download data and load
     train_data_path, dev_data_path = download_data(data_dir, squad_ver)
@@ -169,7 +168,7 @@ if __name__=="__main__":
     # load pretrained model
     print("Loading model")
     if args.distill:
-        model = BidirectionalAttentionFlowDistill.from_pretrained(distill_weight)
+        model = BidirectionalAttentionFlowDistill.from_pretrained(distill_weight, temperature)
     else:
         bidaf_pred = pretrained.load_predictor("rc-bidaf")
         model = bidaf_pred._model

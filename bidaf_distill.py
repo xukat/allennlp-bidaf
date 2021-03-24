@@ -27,7 +27,7 @@ SQUAD2_NO_ANSWER_TOKEN = "@@<NO_ANSWER>@@"
 
 def get_distill_loss(span_start_logits, span_end_logits,
                      span_start_teacher_logits, span_end_teacher_logits,
-                     passage_mask, reduction="mean"):
+                     passage_mask, temperature=1, reduction="mean"):
     """
     Computes distill loss based on teacher logits
     Assumes teacher and student logits are both unnormalized and have size batch_size x context_len
@@ -38,16 +38,16 @@ def get_distill_loss(span_start_logits, span_end_logits,
     # print(span_start_logits.shape)
     # print(span_end_logits.shape)
 
-    masked_start_logits = util.masked_log_softmax(span_start_logits, passage_mask)
-    masked_end_logits = util.masked_log_softmax(span_end_logits, passage_mask)
+    masked_start_logits = util.masked_log_softmax(span_start_logits/temperature, passage_mask)
+    masked_end_logits = util.masked_log_softmax(span_end_logits/temperature, passage_mask)
 
-    masked_start_teacher_logits = util.masked_softmax(span_start_teacher_logits, passage_mask)
-    masked_end_teacher_logits = util.masked_softmax(span_end_teacher_logits, passage_mask)
+    masked_start_teacher_logits = util.masked_softmax(span_start_teacher_logits/temperature, passage_mask)
+    masked_end_teacher_logits = util.masked_softmax(span_end_teacher_logits/temperature, passage_mask)
 
     span_start_loss = masked_start_teacher_logits.unsqueeze(1) @ masked_start_logits.unsqueeze(2)
     span_end_loss = masked_end_teacher_logits.unsqueeze(1) @ masked_end_logits.unsqueeze(2)
 
-    distill_loss = -1*(span_start_loss + span_end_loss)
+    distill_loss = -1 * temperature**2 * (span_start_loss + span_end_loss)
     # print("start loss:", torch.mean(span_start_loss), "end loss:", torch.mean(span_end_loss), "total loss:", torch.mean(distill_loss))
 
     if reduction == "mean":
@@ -71,7 +71,8 @@ class BidirectionalAttentionFlowDistill(BidirectionalAttentionFlow):
         mask_lstms: bool = True,
         initializer: InitializerApplicator = InitializerApplicator(),
         regularizer: Optional[RegularizerApplicator] = None,
-        distill_weight: float = 1
+        distill_weight: float = 1,
+        temperature: float = 1
     ) -> None:
 
         super().__init__(vocab, text_field_embedder, num_highway_layers,
@@ -79,6 +80,7 @@ class BidirectionalAttentionFlowDistill(BidirectionalAttentionFlow):
                          span_end_encoder, dropout, mask_lstms, initializer, regularizer)
 
         self.distill_weight = distill_weight
+        self.temperature = temperature
 
     def forward(  # type: ignore
         self,
@@ -101,14 +103,14 @@ class BidirectionalAttentionFlowDistill(BidirectionalAttentionFlow):
 
             distill_loss = self.distill_weight * get_distill_loss(span_start_logits, span_end_logits,
                                                                   span_start_teacher_logits, span_end_teacher_logits,
-                                                                  passage_mask)
-
+                                                                  passage_mask, self.temperature)
+            output_dict["distill_loss"] = distill_loss
             output_dict["loss"] += distill_loss
 
         return output_dict
 
     @classmethod
-    def from_pretrained(cls, distill_weight=1):
+    def from_pretrained(cls, distill_weight=1, temperature=1):
         bidaf_pred = pretrained.load_predictor("rc-bidaf")
         model = bidaf_pred._model
 
@@ -121,7 +123,8 @@ class BidirectionalAttentionFlowDistill(BidirectionalAttentionFlow):
                                               copy.deepcopy(model._span_end_encoder),
                                               mask_lstms = copy.deepcopy(model._mask_lstms),
                                               regularizer = copy.deepcopy(model._regularizer),
-                                              distill_weight = distill_weight
+                                              distill_weight = distill_weight,
+                                              temperature = temperature
                                               )
 
         distill_model._highway_layer = copy.deepcopy(model._highway_layer)
