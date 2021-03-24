@@ -45,6 +45,7 @@ if __name__=="__main__":
     parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--cuda_device", type=int, default=-1)
 
+    parser.add_argument("--use_pretrained", action="store_true")
     parser.add_argument("--distill", action="store_true")
 
     args = parser.parse_args()
@@ -64,10 +65,9 @@ if __name__=="__main__":
 
     batch_size = args.batch_size
     cuda_device = args.cuda_device
-    # if args.cuda_device is not None:
-    #     cuda_device = int(args.cuda_device)
-    # else:
-    #     cuda_device = None
+
+    distill = args.distill
+    use_pretrained = args.use_pretrained
 
     # download data and load
     _, dev_data_path = download_data(data_dir, squad_ver)
@@ -91,7 +91,8 @@ if __name__=="__main__":
     print("Time elapsed:", time.time()-tic)
 
     # load trained model
-    model.load_state_dict(torch.load(model_path))
+    if not use_pretrained:
+        model.load_state_dict(torch.load(model_path))
 
     # evaluate trained model
     print("Evaluating")

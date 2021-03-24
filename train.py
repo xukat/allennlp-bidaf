@@ -161,18 +161,6 @@ if __name__=="__main__":
     if distill:
         distill_weight = args.distill_weight
 
-    # pdb.set_trace()
-
-    # define parameters
-    # data_dir = "data/"
-    # squad_ver=1.1
-
-    # save_dir = "tmp/"
-    # num_epochs = 1
-    # batch_size = 32
-    # learning_rate = 0.001
-    # cuda_device = None
-
     # download data and load
     train_data_path, dev_data_path = download_data(data_dir, squad_ver)
     train_data, dev_data = load_data(train_data_path, dev_data_path, squad_ver, distill)
@@ -217,13 +205,5 @@ if __name__=="__main__":
     tic = time.time()
     results = evaluate(model, dev_loader, cuda_device, output_file=None, predictions_output_file=None)
     print("Time elapsed:", time.time()-tic)
-
-    # batch size = 8
-    # Pretrained model: start_acc: 0.30, end_acc: 0.31, span_acc: 0.20, em: 0.27, f1: 0.41, loss: 7.04 ||: : 1322it [05:46,  3.82it/s]
-    # Trained one epoch: start_acc: 0.53, end_acc: 0.57, span_acc: 0.44, em: 0.53, f1: 0.65, loss: 3.39 ||: : 1322it [05:57,  3.70it/s]
-
-    # batch size = 32
-    # pretrained: start_acc: 0.30, end_acc: 0.31, span_acc: 0.20, em: 0.27, f1: 0.41, loss: 7.04 ||: : 331it [05:41,  1.03s/it]
-    # trained one epoch: start_acc: 0.54, end_acc: 0.58, span_acc: 0.46, em: 0.57, f1: 0.67, loss: 3.19 ||: : 331it [03:52,  1.42it/s]
 
     pdb.set_trace()
