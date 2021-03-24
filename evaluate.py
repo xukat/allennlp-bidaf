@@ -94,6 +94,10 @@ if __name__=="__main__":
     if not use_pretrained:
         model.load_state_dict(torch.load(model_path))
 
+    # move to gpu if using
+    if cuda_device >= 0:
+        model.cuda(cuda_device)
+
     # evaluate trained model
     print("Evaluating")
     tic = time.time()
