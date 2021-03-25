@@ -44,7 +44,7 @@ data_path = os.path.join(data_dir, "train-logits-small.csv")
 # instances = dataset_reader.read(data_path)
 
 ### open csv, read, and save to instances
-data = pd.read_csv(data_path)
+data = pd.read_csv(data_path, keep_default_na=False)
 
 pdb.set_trace()
 

@@ -33,7 +33,7 @@ from bidaf_distill import BidirectionalAttentionFlowDistill, SquadReaderDistill
 
 def download_data(data_dir, squad_ver):
     train_data_filename = "train-v"+str(squad_ver)+".json"
-    dev_data_filename = "dev-"+str(squad_ver)+".json"
+    dev_data_filename = "dev-v"+str(squad_ver)+".json"
 
     train_data_path = os.path.join(data_dir, train_data_filename)
     dev_data_path = os.path.join(data_dir, dev_data_filename)
@@ -201,6 +201,7 @@ if __name__=="__main__":
     print("Building trainer")
     trainer = build_trainer(model, save_dir, train_loader, dev_loader, num_epochs, learning_rate, cuda_device)
 
+    pdb.set_trace()
     # train
     print("Starting training")
     tic = time.time()

@@ -34,17 +34,17 @@ def get_distill_loss(span_start_logits, span_end_logits,
     Computes distill loss based on teacher logits
     Assumes teacher and student logits are both unnormalized and have size batch_size x context_len
     """
-    # print("it works!")
     # print(span_start_teacher_logits.shape) # batch x context_len
     # print(span_end_teacher_logits.shape)
     # print(span_start_logits.shape)
     # print(span_end_logits.shape)
 
-    # for now let's truncate logits to match their sizes
+    ### for now let's truncate logits to match their sizes
     # TODO remove this
     logit_len = span_start_logits.shape[1]
     span_start_teacher_logits = span_start_teacher_logits[:, 0:logit_len]
     span_end_teacher_logits = span_end_teacher_logits[:, 0:logit_len]
+    ###
 
     masked_start_logits = util.masked_log_softmax(span_start_logits/temperature, passage_mask)
     masked_end_logits = util.masked_log_softmax(span_end_logits/temperature, passage_mask)
@@ -146,43 +146,50 @@ class SquadReaderDistill(SquadReader):
         file_path = cached_path(file_path)
 
         logger.info("Reading file at %s", file_path)
-        dataset = pd.read_csv(file_path)
+
+        dataset = pd.read_csv(file_path, dtype=str, keep_default_na=False)
 
         logger.info("Reading the dataset")
 
         for i, datapoint in dataset.iterrows():
-            paragraph = datapoint.at["context_text"]
-            tokenized_paragraph = self._tokenizer.tokenize(paragraph)
-            question_text = datapoint.at["question_text"].strip().replace("\n", "")
+            try:
+                paragraph = datapoint.at["context_text"]
+                tokenized_paragraph = self._tokenizer.tokenize(paragraph)
+                question_text = datapoint.at["question_text"].strip().replace("\n", "")
 
-            is_impossible = False
+                is_impossible = False
 
-            answer_texts = [datapoint.at["answer_text"]]
-            span_starts = [int(datapoint.at["start_position_character"])]
-            span_ends = [start + len(answer) for start, answer in zip(span_starts, answer_texts)]
+                answer_texts = [datapoint.at["answer_text"]]
+                span_starts = [int(datapoint.at["start_position_character"])]
+                span_ends = [start + len(answer) for start, answer in zip(span_starts, answer_texts)]
 
-            additional_metadata = {"id": datapoint.at["qas_id"]}
+                additional_metadata = {"id": datapoint.at["qas_id"]}
 
-            instance = self.text_to_instance(
-                question_text,
-                paragraph,
-                is_impossible=is_impossible,
-                char_spans=zip(span_starts, span_ends),
-                answer_texts=answer_texts,
-                passage_tokens=tokenized_paragraph,
-                additional_metadata=additional_metadata,
-            )
+                instance = self.text_to_instance(
+                    question_text,
+                    paragraph,
+                    is_impossible=is_impossible,
+                    char_spans=zip(span_starts, span_ends),
+                    answer_texts=answer_texts,
+                    passage_tokens=tokenized_paragraph,
+                    additional_metadata=additional_metadata,
+                )
 
-            span_start_teacher_logits = np.fromstring(datapoint.at["start_logits"].replace("\n", "").strip("[]"), sep=" ")
-            span_end_teacher_logits = np.fromstring(datapoint.at["end_logits"].replace("\n", "").strip("[]"), sep=" ")
+                span_start_teacher_logits = np.fromstring(datapoint.at["start_logits"].replace("\n", "").strip("[]"), sep=" ")
+                span_end_teacher_logits = np.fromstring(datapoint.at["end_logits"].replace("\n", "").strip("[]"), sep=" ")
 
-            instance.add_field("span_start_teacher_logits", TensorField(torch.tensor(span_start_teacher_logits, dtype=torch.float32)))
-            instance.add_field("span_end_teacher_logits", TensorField(torch.tensor(span_end_teacher_logits, dtype=torch.float32)))
+                instance.add_field("span_start_teacher_logits", TensorField(torch.tensor(span_start_teacher_logits, dtype=torch.float32)))
+                instance.add_field("span_end_teacher_logits", TensorField(torch.tensor(span_end_teacher_logits, dtype=torch.float32)))
+
+            except:
+                print("ERROR! skipped datapoint:", i, datapoint.at["qas_id"], answer_texts, span_starts)
+                instance = None
+                # pdb.set_trace()
 
             if instance is not None:
                 yield instance
 
-### for reading from json ###s
+### for reading from json ###
 #     def _read(self, file_path: str):
 #         # if `file_path` is a URL, redirect to the cache
 #         file_path = cached_path(file_path)
