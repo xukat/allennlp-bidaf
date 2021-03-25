@@ -18,6 +18,8 @@ import torch
 import json
 import logging
 import copy
+import pandas as pd
+import numpy as np
 
 import pdb
 
@@ -37,6 +39,12 @@ def get_distill_loss(span_start_logits, span_end_logits,
     # print(span_end_teacher_logits.shape)
     # print(span_start_logits.shape)
     # print(span_end_logits.shape)
+
+    # for now let's truncate logits to match their sizes
+    # TODO remove this
+    logit_len = span_start_logits.shape[1]
+    span_start_teacher_logits = span_start_teacher_logits[:, 0:logit_len]
+    span_end_teacher_logits = span_end_teacher_logits[:, 0:logit_len]
 
     masked_start_logits = util.masked_log_softmax(span_start_logits/temperature, passage_mask)
     masked_end_logits = util.masked_log_softmax(span_end_logits/temperature, passage_mask)
@@ -138,47 +146,89 @@ class SquadReaderDistill(SquadReader):
         file_path = cached_path(file_path)
 
         logger.info("Reading file at %s", file_path)
-        with open(file_path) as dataset_file:
-            dataset_json = json.load(dataset_file)
-            dataset = dataset_json["data"]
+        dataset = pd.read_csv(file_path)
+
         logger.info("Reading the dataset")
-        for article in dataset:
-            for paragraph_json in article["paragraphs"]:
-                paragraph = paragraph_json["context"]
-                tokenized_paragraph = self._tokenizer.tokenize(paragraph)
 
-                for question_answer in self.shard_iterable(paragraph_json["qas"]):
-                    question_text = question_answer["question"].strip().replace("\n", "")
-                    is_impossible = question_answer.get("is_impossible", False)
-                    if is_impossible:
-                        answer_texts: List[str] = []
-                        span_starts: List[int] = []
-                        span_ends: List[int] = []
-                    else:
-                        answer_texts = [answer["text"] for answer in question_answer["answers"]]
-                        span_starts = [
-                            answer["answer_start"] for answer in question_answer["answers"]
-                        ]
-                        span_ends = [
-                            start + len(answer) for start, answer in zip(span_starts, answer_texts)
-                        ]
-                    additional_metadata = {"id": question_answer.get("id", None)}
-                    instance = self.text_to_instance(
-                        question_text,
-                        paragraph,
-                        is_impossible=is_impossible,
-                        char_spans=zip(span_starts, span_ends),
-                        answer_texts=answer_texts,
-                        passage_tokens=tokenized_paragraph,
-                        additional_metadata=additional_metadata,
-                    )
-                    #### Begin added code for teacher logits
-                    # TODO update after confirming how teacher logits are saved
-                    span_start_teacher_logits = question_answer["teacher_logits"]["start"]
-                    span_end_teacher_logits = question_answer["teacher_logits"]["end"]
+        for i, datapoint in dataset.iterrows():
+            paragraph = datapoint.at["context_text"]
+            tokenized_paragraph = self._tokenizer.tokenize(paragraph)
+            question_text = datapoint.at["question_text"].strip().replace("\n", "")
 
-                    instance.add_field("span_start_teacher_logits", TensorField(torch.tensor(span_start_teacher_logits, dtype=torch.float32)))
-                    instance.add_field("span_end_teacher_logits", TensorField(torch.tensor(span_end_teacher_logits, dtype=torch.float32)))
-                    #### End added code
-                    if instance is not None:
-                        yield instance
+            is_impossible = False
+
+            answer_texts = [datapoint.at["answer_text"]]
+            span_starts = [int(datapoint.at["start_position_character"])]
+            span_ends = [start + len(answer) for start, answer in zip(span_starts, answer_texts)]
+
+            additional_metadata = {"id": datapoint.at["qas_id"]}
+
+            instance = self.text_to_instance(
+                question_text,
+                paragraph,
+                is_impossible=is_impossible,
+                char_spans=zip(span_starts, span_ends),
+                answer_texts=answer_texts,
+                passage_tokens=tokenized_paragraph,
+                additional_metadata=additional_metadata,
+            )
+
+            span_start_teacher_logits = np.fromstring(datapoint.at["start_logits"].replace("\n", "").strip("[]"), sep=" ")
+            span_end_teacher_logits = np.fromstring(datapoint.at["end_logits"].replace("\n", "").strip("[]"), sep=" ")
+
+            instance.add_field("span_start_teacher_logits", TensorField(torch.tensor(span_start_teacher_logits, dtype=torch.float32)))
+            instance.add_field("span_end_teacher_logits", TensorField(torch.tensor(span_end_teacher_logits, dtype=torch.float32)))
+
+            if instance is not None:
+                yield instance
+
+### for reading from json ###s
+#     def _read(self, file_path: str):
+#         # if `file_path` is a URL, redirect to the cache
+#         file_path = cached_path(file_path)
+# 
+#         logger.info("Reading file at %s", file_path)
+#         with open(file_path) as dataset_file:
+#             dataset_json = json.load(dataset_file)
+#             dataset = dataset_json["data"]
+#         logger.info("Reading the dataset")
+#         for article in dataset:
+#             for paragraph_json in article["paragraphs"]:
+#                 paragraph = paragraph_json["context"]
+#                 tokenized_paragraph = self._tokenizer.tokenize(paragraph)
+# 
+#                 for question_answer in self.shard_iterable(paragraph_json["qas"]):
+#                     question_text = question_answer["question"].strip().replace("\n", "")
+#                     is_impossible = question_answer.get("is_impossible", False)
+#                     if is_impossible:
+#                         answer_texts: List[str] = []
+#                         span_starts: List[int] = []
+#                         span_ends: List[int] = []
+#                     else:
+#                         answer_texts = [answer["text"] for answer in question_answer["answers"]]
+#                         span_starts = [
+#                             answer["answer_start"] for answer in question_answer["answers"]
+#                         ]
+#                         span_ends = [
+#                             start + len(answer) for start, answer in zip(span_starts, answer_texts)
+#                         ]
+#                     additional_metadata = {"id": question_answer.get("id", None)}
+#                     instance = self.text_to_instance(
+#                         question_text,
+#                         paragraph,
+#                         is_impossible=is_impossible,
+#                         char_spans=zip(span_starts, span_ends),
+#                         answer_texts=answer_texts,
+#                         passage_tokens=tokenized_paragraph,
+#                         additional_metadata=additional_metadata,
+#                     )
+#                     #### Begin added code for teacher logits
+#                     # TODO update after confirming how teacher logits are saved
+#                     span_start_teacher_logits = question_answer["teacher_logits"]["start"]
+#                     span_end_teacher_logits = question_answer["teacher_logits"]["end"]
+# 
+#                     instance.add_field("span_start_teacher_logits", TensorField(torch.tensor(span_start_teacher_logits, dtype=torch.float32)))
+#                     instance.add_field("span_end_teacher_logits", TensorField(torch.tensor(span_end_teacher_logits, dtype=torch.float32)))
+#                     #### End added code
+#                     if instance is not None:
+#                         yield instance

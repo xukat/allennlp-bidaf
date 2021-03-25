@@ -141,6 +141,8 @@ if __name__=="__main__":
     parser.add_argument("--distill_weight", type=float, default=1)
     parser.add_argument("--temperature", type=float, default=1)
 
+    parser.add_argument("--distill_data_file", default="train-logits.csv")
+
     args = parser.parse_args()
 
     # pdb.set_trace()
@@ -148,7 +150,6 @@ if __name__=="__main__":
     # define parameters
     data_dir = args.data_dir
     squad_ver = args.squad_ver
-
     save_dir = args.save_dir
 
     num_epochs = args.num_epochs
@@ -160,8 +161,14 @@ if __name__=="__main__":
     distill_weight = args.distill_weight
     temperature = args.temperature
 
+    distill_data_path = os.path.join(data_dir, args.distill_data_file)
+
     # download data and load
-    train_data_path, dev_data_path = download_data(data_dir, squad_ver)
+    if distill:
+        _, dev_data_path = download_data(data_dir, squad_ver)
+        train_data_path = distill_data_path
+    else:
+        train_data_path, dev_data_path = download_data(data_dir, squad_ver)
     train_data, dev_data = load_data(train_data_path, dev_data_path, squad_ver, distill)
     train_loader, dev_loader = build_data_loaders(train_data, dev_data, batch_size)
 
