@@ -201,7 +201,6 @@ if __name__=="__main__":
     print("Building trainer")
     trainer = build_trainer(model, save_dir, train_loader, dev_loader, num_epochs, learning_rate, cuda_device)
 
-    pdb.set_trace()
     # train
     print("Starting training")
     tic = time.time()
