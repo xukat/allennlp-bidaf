@@ -70,22 +70,26 @@ def load_data(train_data_path, dev_data_path, squad_ver, distill=False):
     tokenizer = SpacyTokenizer()
 
     if distill:
-        Reader = SquadReaderDistill
+        TrainReader = SquadReaderDistill
     else:
-        Reader = SquadReader
+        TrainReader = SquadReader
+
+    DevReader = SquadReader
 
     if squad_ver==1.1:
-        dataset_reader = Reader.squad1(tokenizer=tokenizer, token_indexers=token_indexers)
+        train_reader = TrainReader.squad1(tokenizer=tokenizer, token_indexers=token_indexers)
+        dev_reader = DevReader.squad1(tokenizer=tokenizer, token_indexers=token_indexers)
     elif squad_ver==2.0:
-        dataset_reader = Reader.squad2(tokenizer=tokenizer, token_indexers=token_indexers)
+        train_reader = TrainReader.squad2(tokenizer=tokenizer, token_indexers=token_indexers)
+        dev_reader = DevReader.squad2(tokenizer=tokenizer, token_indexers=token_indexers)
     else:
         raise
 
     print("Reading data...")
     tic = time.time()
 
-    train_data = list(dataset_reader.read(train_data_path))
-    dev_data = list(dataset_reader.read(dev_data_path))
+    train_data = list(train_reader.read(train_data_path))
+    dev_data = list(dev_reader.read(dev_data_path))
 
     print("Time elapsed:", time.time()-tic)
 
@@ -212,4 +216,4 @@ if __name__=="__main__":
     results = evaluate(model, dev_loader, cuda_device, output_file=None, predictions_output_file=None)
     print("Time elapsed:", time.time()-tic)
 
-    pdb.set_trace()
+    # pdb.set_trace()

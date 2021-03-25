@@ -46,7 +46,6 @@ if __name__=="__main__":
     parser.add_argument("--cuda_device", type=int, default=-1)
 
     parser.add_argument("--use_pretrained", action="store_true")
-    parser.add_argument("--distill", action="store_true")
 
     args = parser.parse_args()
 
@@ -67,11 +66,16 @@ if __name__=="__main__":
     cuda_device = args.cuda_device
 
     distill = args.distill
+    distill_weight = args.distill_weight
+    temperature = args.temperature
+
+    distill_data_path = os.path.join(data_dir, args.distill_data_file)
+
     use_pretrained = args.use_pretrained
 
     # download data and load
     _, dev_data_path = download_data(data_dir, squad_ver)
-    _, dev_data = load_data(dev_data_path, dev_data_path, squad_ver, distill)
+    _, dev_data = load_data(dev_data_path, dev_data_path, squad_ver)
     _, dev_loader = build_data_loaders(dev_data, dev_data, batch_size)
 
     # load pretrained model
