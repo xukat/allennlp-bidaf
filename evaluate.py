@@ -49,8 +49,6 @@ if __name__=="__main__":
 
     args = parser.parse_args()
 
-    # pdb.set_trace()
-
     # define parameters
     data_dir = args.data_dir
     squad_ver = args.squad_ver
@@ -64,12 +62,6 @@ if __name__=="__main__":
 
     batch_size = args.batch_size
     cuda_device = args.cuda_device
-
-    distill = args.distill
-    distill_weight = args.distill_weight
-    temperature = args.temperature
-
-    distill_data_path = os.path.join(data_dir, args.distill_data_file)
 
     use_pretrained = args.use_pretrained
 
@@ -108,12 +100,4 @@ if __name__=="__main__":
     results = evaluate(model, dev_loader, cuda_device, output_file=None, predictions_output_file=None)
     print("Time elapsed:", time.time()-tic)
 
-    # batch size = 8
-    # Pretrained model: start_acc: 0.30, end_acc: 0.31, span_acc: 0.20, em: 0.27, f1: 0.41, loss: 7.04 ||: : 1322it [05:46,  3.82it/s]
-    # Trained one epoch: start_acc: 0.53, end_acc: 0.57, span_acc: 0.44, em: 0.53, f1: 0.65, loss: 3.39 ||: : 1322it [05:57,  3.70it/s]
-
-    # batch size = 32
-    # pretrained: start_acc: 0.30, end_acc: 0.31, span_acc: 0.20, em: 0.27, f1: 0.41, loss: 7.04 ||: : 331it [05:41,  1.03s/it]
-    # trained one epoch: start_acc: 0.54, end_acc: 0.58, span_acc: 0.46, em: 0.57, f1: 0.67, loss: 3.19 ||: : 331it [03:52,  1.42it/s]
-
-    pdb.set_trace()
+    # pdb.set_trace()
