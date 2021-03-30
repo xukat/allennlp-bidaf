@@ -178,7 +178,7 @@ if __name__=="__main__":
 
     # load pretrained model
     print("Loading model")
-    if args.distill:
+    if distill:
         model = BidirectionalAttentionFlowDistill.from_pretrained(distill_weight, temperature)
     else:
         bidaf_pred = pretrained.load_predictor("rc-bidaf")

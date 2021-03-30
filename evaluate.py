@@ -72,11 +72,8 @@ if __name__=="__main__":
 
     # load pretrained model
     print("Loading model")
-    if distill:
-        model = BidirectionalAttentionFlowDistill.from_pretrained()
-    else:
-        bidaf_pred = pretrained.load_predictor("rc-bidaf")
-        model = bidaf_pred._model
+    bidaf_pred = pretrained.load_predictor("rc-bidaf")
+    model = bidaf_pred._model
 
     # index with vocab
     print("Indexing")
