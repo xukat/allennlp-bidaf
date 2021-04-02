@@ -20,6 +20,7 @@ import logging
 import copy
 import pandas as pd
 import numpy as np
+import csv
 
 import pdb
 
@@ -41,10 +42,13 @@ def get_distill_loss(span_start_logits, span_end_logits,
 
     ### for now let's truncate logits to match their sizes
     # TODO remove this
-    logit_len = span_start_logits.shape[1]
-    span_start_teacher_logits = span_start_teacher_logits[:, 0:logit_len]
-    span_end_teacher_logits = span_end_teacher_logits[:, 0:logit_len]
+    # logit_len = span_start_logits.shape[1]
+    # span_start_teacher_logits = span_start_teacher_logits[:, 0:logit_len]
+    # span_end_teacher_logits = span_end_teacher_logits[:, 0:logit_len]
     ###
+
+    assert span_start_teacher_logits.shape[1] == span_start_logits.shape[1]
+    assert span_end_teacher_logits.shape[1] == span_end_logits.shape[1]
 
     masked_start_logits = util.masked_log_softmax(span_start_logits/temperature, passage_mask)
     masked_end_logits = util.masked_log_softmax(span_end_logits/temperature, passage_mask)
@@ -150,9 +154,13 @@ class SquadReaderDistill(SquadReader):
         dataset = pd.read_csv(file_path, dtype=str, keep_default_na=False)
 
         logger.info("Reading the dataset")
+        flag = True
+        count_total = 0
+        count_mismatch = 0
 
         for i, datapoint in dataset.iterrows():
             try:
+                count_total += 1
                 paragraph = datapoint.at["context_text"]
                 tokenized_paragraph = self._tokenizer.tokenize(paragraph)
                 question_text = datapoint.at["question_text"].strip().replace("\n", "")
@@ -181,6 +189,23 @@ class SquadReaderDistill(SquadReader):
                 instance.add_field("span_start_teacher_logits", TensorField(torch.tensor(span_start_teacher_logits, dtype=torch.float32)))
                 instance.add_field("span_end_teacher_logits", TensorField(torch.tensor(span_end_teacher_logits, dtype=torch.float32)))
 
+                assert len(span_start_teacher_logits) == len(tokenized_paragraph)
+                assert len(span_end_teacher_logits) == len(tokenized_paragraph)
+            except AssertionError:
+                count_mismatch += 1
+                # print("ERROR! logit length mismatch. tokenized paragraph:", len(tokenized_paragraph), "start logits:", len(span_start_teacher_logits), "end logits:", len(span_end_teacher_logits) )
+                if flag:
+                    with open("mismatch_errors.csv", "w") as fp:
+                        flag = False
+                        writer = csv.writer(fp)
+                        writer.writerow(["id", "text", "len tokenized_paragraph", "len span_start_teacher_logits", "len span_end_teacher_logits"])
+                        writer.writerow([additional_metadata["id"], paragraph, len(tokenized_paragraph), len(span_start_teacher_logits), len(span_end_teacher_logits)])
+                else:
+                    with open("mismatch_errors.csv", "a") as fp:
+                        writer = csv.writer(fp)
+                        writer.writerow([additional_metadata["id"], paragraph, len(tokenized_paragraph), len(span_start_teacher_logits), len(span_end_teacher_logits)])
+
+                # instance = None
             except:
                 print("ERROR! skipped datapoint:", i, datapoint.at["qas_id"], answer_texts, span_starts)
                 instance = None
@@ -188,6 +213,9 @@ class SquadReaderDistill(SquadReader):
 
             if instance is not None:
                 yield instance
+
+        if not flag:
+            print("Number of logit length mismatches, data point skipped: ", count_mismatch, "/", count_total)
 
 ### for reading from json ###
 #     def _read(self, file_path: str):
