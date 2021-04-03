@@ -32,6 +32,21 @@ from allennlp_models.rc.dataset_readers import SquadReader
 from bidaf_distill import BidirectionalAttentionFlowDistill, SquadReaderDistill
 
 def download_data(data_dir, squad_ver):
+    """
+    Downloads specified version of SQuAD dataset to specified directory
+
+    Parameters
+        data_dir : string
+            folder to save dataset to
+        squad_ver : float
+            squad version to download (1.1 or 2.0)
+
+    Returns
+        train_data_path : string
+            path to downloaded train data
+        dev_data_path : string
+            path to downloaded dev data
+    """
     train_data_filename = "train-v"+str(squad_ver)+".json"
     dev_data_filename = "dev-v"+str(squad_ver)+".json"
 
@@ -44,6 +59,7 @@ def download_data(data_dir, squad_ver):
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
 
+    # download train data if file does not already exist
     if not os.path.exists(train_data_path):
         print("Downloading train data...")
         item = requests.get(train_data_url)
@@ -53,6 +69,7 @@ def download_data(data_dir, squad_ver):
     else:
         print("Train data already downloaded.")
 
+    # download dev data if file does not already exist
     if not os.path.exists(dev_data_path):
         print("Downloading dev data...")
         item = requests.get(dev_data_url)
@@ -65,8 +82,28 @@ def download_data(data_dir, squad_ver):
     return train_data_path, dev_data_path
 
 def load_data(train_data_path, dev_data_path, squad_ver, distill=False):
+    """
+    Loads data from files
+    Adapted from https://guide.allennlp.org/training-and-prediction
+
+    Parameters
+        train_data_path : string
+            Path to train data of specified squad version
+        dev_data_path : string
+            Path to dev data of specified squad version
+        squad_ver : float
+            Squad version to use (1.1 or 2.0)
+        distill : bool (default: False)
+            Whether or not we are training with knowledge distillation.
+            If True, assumes file at train_data_path is the csv file containing BERT logits.
+            If False, assumes file at train_data_path is the original json file.
+
+    Returns
+        train_data : list of Instances
+        dev_data : list of Instances
+    """
+    # make appropriate dataset reader classes
     token_indexers = {'token_characters': TokenCharactersIndexer(), 'tokens': SingleIdTokenIndexer()}
-    # tokenizer = SpacyTokenizer(start_tokens=start_tokens, end_tokens=end_tokens)
     tokenizer = SpacyTokenizer()
 
     if distill:
@@ -85,21 +122,31 @@ def load_data(train_data_path, dev_data_path, squad_ver, distill=False):
     else:
         raise
 
-    print("Reading data...")
+    # load data from files and preprocess (save as Instances)
+    print("Reading data")
     tic = time.time()
 
-    train_data = list(train_reader.read(train_data_path))
-    dev_data = list(dev_reader.read(dev_data_path))
+    if train_data_path is not None:
+        train_data = list(train_reader.read(train_data_path))
+    else:
+        train_data = None
 
+    if dev_data_path is not None:
+        dev_data = list(dev_reader.read(dev_data_path))
+    else:
+        dev_data = None
     print("Time elapsed:", time.time()-tic)
 
     return train_data, dev_data
 
 def build_data_loaders(train_data: List[Instance],
                        dev_data: List[Instance],
-                       batch_size
+                       batch_size: int
                       ) -> Tuple[DataLoader, DataLoader]:
-
+    """
+    Creates data loaders which loads data in batches of size batch_size for training and validation
+    Adapted from https://guide.allennlp.org/training-and-prediction
+    """
     train_loader = SimpleDataLoader(train_data, batch_size, shuffle=True)
     dev_loader = SimpleDataLoader(dev_data, batch_size, shuffle=False)
 
@@ -114,7 +161,28 @@ def build_trainer(
     learning_rate: float = 0.001,
     cuda_device = None
 ) -> Trainer:
+    """
+    Builds instance of Trainer class with specified training hyperparameters
+    Adapted from https://guide.allennlp.org/training-and-prediction
 
+    Parameters
+        model : Model
+            The model to train
+        serialization_dir : str
+            Directory to save checkpoints and results
+        train_loader : DataLoader
+            Previously built dataset loader for training data
+        dev_loader : DataLoader
+            Previously built loader for dev data
+        num_epochs : int
+            Number of epochs to train for
+        learning_rate : float (default: 0.001)
+        cuda_device : int (default: None)
+            >=0 if using GPU
+
+    Returns
+        trainer : Trainer
+    """
     parameters = [(n, p) for n, p in model.named_parameters() if p.requires_grad]
     optimizer = AdamOptimizer(parameters, lr=learning_rate)  # type: ignore
     trainer = GradientDescentTrainer(
@@ -148,8 +216,6 @@ if __name__=="__main__":
     parser.add_argument("--distill_data_file", default="train-spacy-logits.csv")
 
     args = parser.parse_args()
-
-    # pdb.set_trace()
 
     # define parameters
     data_dir = args.data_dir
@@ -203,17 +269,6 @@ if __name__=="__main__":
 
     # train
     print("Starting training")
-    tic = time.time()
-
     trainer.train()
-
-    print("Finished training")
-    print("Time elapsed:", time.time()-tic)
-
-    # evaluate trained model
-    print("Evaluating")
-    tic = time.time()
-    results = evaluate(model, dev_loader, cuda_device, output_file=None, predictions_output_file=None)
-    print("Time elapsed:", time.time()-tic)
 
     # pdb.set_trace()
