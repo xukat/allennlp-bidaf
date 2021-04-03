@@ -159,8 +159,8 @@ class SquadReaderDistill(SquadReader):
         count_mismatch = 0
 
         for i, datapoint in dataset.iterrows():
+            count_total += 1
             try:
-                count_total += 1
                 paragraph = datapoint.at["context_text"]
                 tokenized_paragraph = self._tokenizer.tokenize(paragraph)
                 question_text = datapoint.at["question_text"].strip().replace("\n", "")
@@ -205,7 +205,7 @@ class SquadReaderDistill(SquadReader):
                         writer = csv.writer(fp)
                         writer.writerow([additional_metadata["id"], paragraph, len(tokenized_paragraph), len(span_start_teacher_logits), len(span_end_teacher_logits)])
 
-                # instance = None
+                instance = None
             except:
                 print("ERROR! skipped datapoint:", i, datapoint.at["qas_id"], answer_texts, span_starts)
                 instance = None
@@ -215,7 +215,7 @@ class SquadReaderDistill(SquadReader):
                 yield instance
 
         if not flag:
-            print("Number of logit length mismatches, data point skipped: ", count_mismatch, "/", count_total)
+            print("Number of logit length mismatches (data points skipped): ", count_mismatch, "/", count_total)
 
 ### for reading from json ###
 #     def _read(self, file_path: str):
