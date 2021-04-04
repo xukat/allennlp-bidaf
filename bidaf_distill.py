@@ -141,11 +141,11 @@ class BidirectionalAttentionFlowDistill(BidirectionalAttentionFlow):
             span_start_logits = output_dict["span_start_logits"]
             span_end_logits = output_dict["span_end_logits"]
 
-            distill_loss = self.distill_weight * get_distill_loss(span_start_logits, span_end_logits,
+            distill_loss = get_distill_loss(span_start_logits, span_end_logits,
                                                                   span_start_teacher_logits, span_end_teacher_logits,
                                                                   passage_mask, self.temperature)
             output_dict["distill_loss"] = distill_loss
-            output_dict["loss"] += distill_loss
+            output_dict["loss"] = (1 - self.distill_weight) * output_dict["loss"] + (self.distill_weight) * distill_loss
 
         return output_dict
 
@@ -182,6 +182,8 @@ class SquadReaderDistill(SquadReader):
 
     _read method copied from parent class and modified to read squad data from
     csv containing teacher logits instead of the original json file
+
+    Note: can only handle squad 1.1
     """
     @overrides
     def _read(self, file_path: str):
