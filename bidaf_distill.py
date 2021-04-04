@@ -206,7 +206,7 @@ class SquadReaderDistill(SquadReader):
         flag = True
         count_total = 0
         count_mismatch = 0
-        random_logits = True
+        random_logits = False
 
         # loop through data and convert each data point to an Instance
         # generates an iterable of Instances 
