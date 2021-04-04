@@ -56,6 +56,11 @@ def get_distill_loss(span_start_logits, span_end_logits,
     Returns
         Scalar loss value
     """
+    # truncate length of logits in case they don't match. for testing.
+    logit_len = span_start_logits.shape[1]
+    span_start_teacher_logits = span_start_teacher_logits[:, 0:logit_len]
+    span_end_teacher_logits = span_end_teacher_logits[:, 0:logit_len]
+
     # assert span_start_teacher_logits.shape[1] == span_start_logits.shape[1]
     # assert span_end_teacher_logits.shape[1] == span_end_logits.shape[1]
 
@@ -201,6 +206,7 @@ class SquadReaderDistill(SquadReader):
         flag = True
         count_total = 0
         count_mismatch = 0
+        random_logits = True
 
         # loop through data and convert each data point to an Instance
         # generates an iterable of Instances 
@@ -239,6 +245,11 @@ class SquadReaderDistill(SquadReader):
                 # teacher logits
                 span_start_teacher_logits = np.fromstring(datapoint.at["start_logits"].replace("\n", "").strip("[]"), sep=" ")
                 span_end_teacher_logits = np.fromstring(datapoint.at["end_logits"].replace("\n", "").strip("[]"), sep=" ")
+
+                # for testing
+                if random_logits:
+                    span_start_teacher_logits = np.random.random(span_start_teacher_logits.shape)
+                    span_end_teacher_logits = np.random.random(span_end_teacher_logits.shape)
 
                 # add teacher logits to Instance
                 instance.add_field("span_start_teacher_logits", TensorField(torch.tensor(span_start_teacher_logits, dtype=torch.float32)))
