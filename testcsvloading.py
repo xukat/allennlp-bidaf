@@ -32,9 +32,10 @@ from train import *
 from bidaf_distill import BidirectionalAttentionFlowDistill, SquadReaderDistill
 
 import pandas as pd
+import torch
 
 data_dir = "data/"
-data_path = os.path.join(data_dir, "train-logits-small.csv")
+data_path = os.path.join(data_dir, "train-spacy-logits-small.csv")
 
 # data = json.load(open(data_path))
 
@@ -63,6 +64,21 @@ print(time.time() - tic)
 
 pdb.set_trace()
 instance_list = [i for i in instances]
+
+
+for i in instance_list:
+    teacher_start = int(torch.argmax(i["span_start_teacher_logits"].tensor))
+    teacher_end = int(torch.argmax(i["span_end_teacher_logits"].tensor))
+    teacher_answer = i["passage"][teacher_start:teacher_end+1]
+
+    start = i["span_start"].sequence_index
+    end = i["span_end"].sequence_index
+    actual_answer = i["passage"][start:end+1]
+
+    print("question:", i["question"])
+    print("teacher answer:", teacher_answer,"actual answer:", actual_answer)
+    print("teacher span:", teacher_start, teacher_end, "actual span:", start, end)
+    print("\n")
 
 pdb.set_trace()
 

@@ -57,9 +57,9 @@ def get_distill_loss(span_start_logits, span_end_logits,
         Scalar loss value
     """
     # truncate length of logits in case they don't match. for testing.
-    logit_len = span_start_logits.shape[1]
-    span_start_teacher_logits = span_start_teacher_logits[:, 0:logit_len]
-    span_end_teacher_logits = span_end_teacher_logits[:, 0:logit_len]
+    # logit_len = span_start_logits.shape[1]
+    # span_start_teacher_logits = span_start_teacher_logits[:, 0:logit_len]
+    # span_end_teacher_logits = span_end_teacher_logits[:, 0:logit_len]
 
     # assert span_start_teacher_logits.shape[1] == span_start_logits.shape[1]
     # assert span_end_teacher_logits.shape[1] == span_end_logits.shape[1]
@@ -105,7 +105,7 @@ class BidirectionalAttentionFlowDistill(BidirectionalAttentionFlow):
         mask_lstms: bool = True,
         initializer: InitializerApplicator = InitializerApplicator(),
         regularizer: Optional[RegularizerApplicator] = None,
-        distill_weight: float = 1,
+        distill_weight: float = 0.5,
         temperature: float = 1
     ) -> None:
         """
@@ -155,7 +155,7 @@ class BidirectionalAttentionFlowDistill(BidirectionalAttentionFlow):
         return output_dict
 
     @classmethod
-    def from_pretrained(cls, distill_weight=1, temperature=1):
+    def from_pretrained(cls, distill_weight=0.5, temperature=1):
         """
         Use this to initialize model with weights from the pretrained BiDAF model.
         Details on the pretrained model available here https://github.com/allenai/allennlp-models/blob/main/allennlp_models/modelcards/rc-bidaf.json
