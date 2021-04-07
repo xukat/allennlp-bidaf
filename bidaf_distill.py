@@ -250,8 +250,8 @@ class SquadReaderDistill(SquadReader):
                 span_end_teacher_logits = np.fromstring(datapoint.at["end_logits"].replace("\n", "").strip("[]"), sep=" ")
 
                 if normalize_logits:
-                    span_start_teacher_logits = span_start_teacher_logits/np.max(span_start_teacher_logits)
-                    span_end_teacher_logits = span_end_teacher_logits/np.max(span_end_teacher_logits)
+                    span_start_teacher_logits = span_start_teacher_logits/(1e-6 + np.max(np.abs(span_start_teacher_logits)))
+                    span_end_teacher_logits = span_end_teacher_logits/(1e-6 + np.max(np.abs(span_end_teacher_logits)))
                 # for testing
                 if random_logits:
                     span_start_teacher_logits = np.random.random(span_start_teacher_logits.shape)
