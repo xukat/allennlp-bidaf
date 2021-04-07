@@ -203,7 +203,7 @@ class SquadReaderDistill(SquadReader):
         logger.info("Reading the dataset")
 
         # for testing
-        normalize_logits = True
+        normalize_logits = False
 
         # for error catching
         flag = True
