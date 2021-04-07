@@ -202,6 +202,9 @@ class SquadReaderDistill(SquadReader):
 
         logger.info("Reading the dataset")
 
+        # for testing
+        normalize_logits = True
+
         # for error catching
         flag = True
         count_total = 0
@@ -246,6 +249,9 @@ class SquadReaderDistill(SquadReader):
                 span_start_teacher_logits = np.fromstring(datapoint.at["start_logits"].replace("\n", "").strip("[]"), sep=" ")
                 span_end_teacher_logits = np.fromstring(datapoint.at["end_logits"].replace("\n", "").strip("[]"), sep=" ")
 
+                if normalize_logits:
+                    span_start_teacher_logits = span_start_teacher_logits/np.max(span_start_teacher_logits)
+                    span_end_teacher_logits = span_end_teacher_logits/np.max(span_end_teacher_logits)
                 # for testing
                 if random_logits:
                     span_start_teacher_logits = np.random.random(span_start_teacher_logits.shape)
