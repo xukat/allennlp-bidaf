@@ -35,23 +35,19 @@ import pandas as pd
 import torch
 
 data_dir = "data/"
-data_path = os.path.join(data_dir, "train-spacy-logits-small.csv")
+data_path = os.path.join(data_dir, "traindata-small.json")
+# data_path = os.path.join(data_dir, "train-spacy-logits-small.csv")
 
 # data = json.load(open(data_path))
 
-# token_indexers = {'token_characters': TokenCharactersIndexer(), 'tokens': SingleIdTokenIndexer()}
-# dataset_reader = SquadReader.squad1(token_indexers=token_indexers)
-# dataset_reader = SquadReaderDistill.squad1(token_indexers=token_indexers)
-# instances = dataset_reader.read(data_path)
-
 ### open csv, read, and save to instances
-data = pd.read_csv(data_path, keep_default_na=False)
+# data = pd.read_csv(data_path, keep_default_na=False)
 
 pdb.set_trace()
 
 token_indexers = {'token_characters': TokenCharactersIndexer(), 'tokens': SingleIdTokenIndexer()}
-# dataset_reader = SquadReader.squad1(token_indexers=token_indexers)
-dataset_reader = SquadReaderDistill.squad1(token_indexers=token_indexers)
+dataset_reader = SquadReader.squad1(token_indexers=token_indexers)
+# dataset_reader = SquadReaderDistill.squad1(token_indexers=token_indexers)
 
 print("reading data")
 tic = time.time()
@@ -65,11 +61,13 @@ print(time.time() - tic)
 pdb.set_trace()
 instance_list = [i for i in instances]
 
-
 for i in instance_list:
-    teacher_start = int(torch.argmax(i["span_start_teacher_logits"].tensor))
-    teacher_end = int(torch.argmax(i["span_end_teacher_logits"].tensor))
-    teacher_answer = i["passage"][teacher_start:teacher_end+1]
+    # teacher_start = int(torch.argmax(i["span_start_teacher_logits"].tensor))
+    # teacher_end = int(torch.argmax(i["span_end_teacher_logits"].tensor))
+    # teacher_answer = i["passage"][teacher_start:teacher_end+1]
+    teacher_start = None
+    teacher_end = None
+    teacher_answer = None
 
     start = i["span_start"].sequence_index
     end = i["span_end"].sequence_index

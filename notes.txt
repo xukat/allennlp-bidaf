@@ -81,3 +81,51 @@ start_acc: 0.5493, end_acc: 0.5820, span_acc: 0.4577, em: 0.5739, f1: 0.6848, ba
 start_acc: 0.6126, end_acc: 0.6553, span_acc: 0.5140, em: 0.5573, f1: 0.6981, batch_loss: 1017.8574, loss: 970.5535 ||: 100%|##########| 2700/2700 [11:19<00:00,  3.97it/s]
 start_acc: 0.5516, end_acc: 0.5874, span_acc: 0.4660, em: 0.5778, f1: 0.6878, batch_loss: 11.0433, loss: 4.1520 ||: 100%|##########| 331/331 [00:26<00:00, 12.55it/s]
 
+_text_field_embedder.token_embedder_token_characters._embedding._module.weight True
+_text_field_embedder.token_embedder_token_characters._encoder._module.conv_layer_0.weight True
+_text_field_embedder.token_embedder_token_characters._encoder._module.conv_layer_0.bias True
+_text_field_embedder.token_embedder_tokens.weight False
+_highway_layer._module._layers.0.weight True
+_highway_layer._module._layers.0.bias True
+_highway_layer._module._layers.1.weight True
+_highway_layer._module._layers.1.bias True
+_phrase_layer._module.weight_ih_l0 True
+_phrase_layer._module.weight_hh_l0 True
+_phrase_layer._module.bias_ih_l0 True
+_phrase_layer._module.bias_hh_l0 True
+_phrase_layer._module.weight_ih_l0_reverse True
+_phrase_layer._module.weight_hh_l0_reverse True
+_phrase_layer._module.bias_ih_l0_reverse True
+_phrase_layer._module.bias_hh_l0_reverse True
+_matrix_attention._weight_vector True
+_matrix_attention._bias True
+_modeling_layer._module.weight_ih_l0 True
+_modeling_layer._module.weight_hh_l0 True
+_modeling_layer._module.bias_ih_l0 True
+_modeling_layer._module.bias_hh_l0 True
+_modeling_layer._module.weight_ih_l0_reverse True
+_modeling_layer._module.weight_hh_l0_reverse True
+_modeling_layer._module.bias_ih_l0_reverse True
+_modeling_layer._module.bias_hh_l0_reverse True
+_modeling_layer._module.weight_ih_l1 True
+_modeling_layer._module.weight_hh_l1 True
+_modeling_layer._module.bias_ih_l1 True
+_modeling_layer._module.bias_hh_l1 True
+_modeling_layer._module.weight_ih_l1_reverse True
+_modeling_layer._module.weight_hh_l1_reverse True
+_modeling_layer._module.bias_ih_l1_reverse True
+_modeling_layer._module.bias_hh_l1_reverse True
+_span_end_encoder._module.weight_ih_l0 True
+_span_end_encoder._module.weight_hh_l0 True
+_span_end_encoder._module.bias_ih_l0 True
+_span_end_encoder._module.bias_hh_l0 True
+_span_end_encoder._module.weight_ih_l0_reverse True
+_span_end_encoder._module.weight_hh_l0_reverse True
+_span_end_encoder._module.bias_ih_l0_reverse True
+_span_end_encoder._module.bias_hh_l0_reverse True
+_span_start_predictor._module.weight True
+_span_start_predictor._module.bias True
+_span_end_predictor._module.weight True
+_span_end_predictor._module.bias True
+
+

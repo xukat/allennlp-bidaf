@@ -87,6 +87,40 @@ def get_distill_loss(span_start_logits, span_end_logits,
     else:
         raise
 
+def init_weights(m):
+    """
+    Initializes bidfaf with random weights according to defaults of pytorch and allennlp
+    (except for glove embeddings)
+    """
+    # initializer = torch.nn.init.ones_ # for testing
+    # LinearAttention -> reset implemented
+    if isinstance(m, LinearMatrixAttention):
+        m.reset_parameters()
+    # Embedding -> weight
+    if isinstance(m, Embedding):
+        initializer = torch.nn.init.xavier_uniform_
+        if m.weight.requires_grad:
+            initializer(m.weight)
+    # Conv1d -> weight, bias
+    if isinstance(m, torch.nn.Conv1d):
+        k = m.groups/(m.in_channels*m.kernel_size[0])
+        initializer = torch.nn.init.uniform_
+        initializer(m.weight, -1*k**0.5, k**0.5)
+        initializer(m.bias, -1*k**0.5, k**0.5)
+    # Linear -> weight, bias
+    if isinstance(m, torch.nn.Linear):
+        k = 1/m.in_features
+        initializer = torch.nn.init.uniform_
+        initializer(m.weight, -1*k**0.5, k**0.5)
+        initializer(m.bias, -1*k**0.5, k**0.5)
+    # LSTM -> ...
+    if isinstance(m, torch.nn.LSTM):
+        k = 1/m.hidden_size
+        initializer = torch.nn.init.uniform_
+        for p in m.parameters():
+            if p.requires_grad:
+                initializer(p, -1*k**0.5, k**0.5)
+
 class BidirectionalAttentionFlowDistill(BidirectionalAttentionFlow):
     """
     Inherit from `BidirecitonalAttentionFlow` defined at

@@ -29,6 +29,9 @@ from allennlp_models import pretrained
 from allennlp_models.rc.models import BidirectionalAttentionFlow
 from allennlp_models.rc.dataset_readers import SquadReader
 
+from allennlp.modules.token_embedders import Embedding
+from allennlp.modules.matrix_attention import LinearMatrixAttention
+
 from bidaf_distill import BidirectionalAttentionFlowDistill, SquadReaderDistill
 
 def download_data(data_dir, squad_ver):
@@ -197,6 +200,40 @@ def build_trainer(
     print("Will train for", num_epochs, "epochs")
     return trainer
 
+def init_weights(m):
+    """
+    Initializes bidfaf with random weights according to defaults of pytorch and allennlp
+    (except for glove embeddings)
+    """
+    # initializer = torch.nn.init.ones_ # for testing
+    # LinearAttention -> reset implemented
+    if isinstance(m, LinearMatrixAttention):
+        m.reset_parameters()
+    # Embedding -> weight
+    if isinstance(m, Embedding):
+        initializer = torch.nn.init.xavier_uniform_
+        if m.weight.requires_grad:
+            initializer(m.weight)
+    # Conv1d -> weight, bias
+    if isinstance(m, torch.nn.Conv1d):
+        k = m.groups/(m.in_channels*m.kernel_size[0])
+        initializer = torch.nn.init.uniform_
+        initializer(m.weight, -1*k**0.5, k**0.5)
+        initializer(m.bias, -1*k**0.5, k**0.5)
+    # Linear -> weight, bias
+    if isinstance(m, torch.nn.Linear):
+        k = 1/m.in_features
+        initializer = torch.nn.init.uniform_
+        initializer(m.weight, -1*k**0.5, k**0.5)
+        initializer(m.bias, -1*k**0.5, k**0.5)
+    # LSTM -> ...
+    if isinstance(m, torch.nn.LSTM):
+        k = 1/m.hidden_size
+        initializer = torch.nn.init.uniform_
+        for p in m.parameters():
+            if p.requires_grad:
+                initializer(p, -1*k**0.5, k**0.5)
+
 if __name__=="__main__":
 
     parser = argparse.ArgumentParser()
@@ -215,6 +252,8 @@ if __name__=="__main__":
 
     parser.add_argument("--distill_data_file", default="train-spacy-logits.csv")
 
+    parser.add_argument("--from_scratch", action="store_true"
+                       )
     args = parser.parse_args()
 
     # define parameters
@@ -233,6 +272,8 @@ if __name__=="__main__":
 
     distill_data_path = os.path.join(data_dir, args.distill_data_file)
 
+    from_stratch = args.from_scratch
+
     # download data and load
     if distill:
         _, dev_data_path = download_data(data_dir, squad_ver)
@@ -249,6 +290,10 @@ if __name__=="__main__":
     else:
         bidaf_pred = pretrained.load_predictor("rc-bidaf")
         model = bidaf_pred._model
+
+    # reset weights if training from scratch
+    if from_scratch:
+        model.apply(init_weights)
 
     # move to gpu if using
     if cuda_device >= 0:
