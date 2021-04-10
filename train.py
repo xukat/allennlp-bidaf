@@ -29,10 +29,11 @@ from allennlp_models import pretrained
 from allennlp_models.rc.models import BidirectionalAttentionFlow
 from allennlp_models.rc.dataset_readers import SquadReader
 
+from bidaf_distill import BidirectionalAttentionFlowDistill, SquadReaderDistill
+
 from allennlp.modules.token_embedders import Embedding
 from allennlp.modules.matrix_attention import LinearMatrixAttention
-
-from bidaf_distill import BidirectionalAttentionFlowDistill, SquadReaderDistill
+import torch
 
 def download_data(data_dir, squad_ver):
     """
