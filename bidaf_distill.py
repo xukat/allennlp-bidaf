@@ -140,7 +140,8 @@ class BidirectionalAttentionFlowDistill(BidirectionalAttentionFlow):
         initializer: InitializerApplicator = InitializerApplicator(),
         regularizer: Optional[RegularizerApplicator] = None,
         distill_weight: float = 0.5,
-        temperature: float = 1
+        temperature: float = 1,
+        reduction: str = "mean"
     ) -> None:
         """
         No changes from parent class except the addition of `distill_weight` and `temperature` attributes
@@ -155,6 +156,7 @@ class BidirectionalAttentionFlowDistill(BidirectionalAttentionFlow):
 
         self.distill_weight = distill_weight
         self.temperature = temperature
+        self.reduction = reduction
 
     def forward(
         self,
@@ -182,14 +184,14 @@ class BidirectionalAttentionFlowDistill(BidirectionalAttentionFlow):
 
             distill_loss = get_distill_loss(span_start_logits, span_end_logits,
                                                                   span_start_teacher_logits, span_end_teacher_logits,
-                                                                  passage_mask, self.temperature)
+                                                                  passage_mask, self.temperature, self.reduction)
             output_dict["distill_loss"] = distill_loss
             output_dict["loss"] = (1 - self.distill_weight) * output_dict["loss"] + (self.distill_weight) * distill_loss
 
         return output_dict
 
     @classmethod
-    def from_pretrained(cls, distill_weight=0.5, temperature=1):
+    def from_pretrained(cls, distill_weight=0.5, temperature=1, reduction="mean"):
         """
         Use this to initialize model with weights from the pretrained BiDAF model.
         Details on the pretrained model available here https://github.com/allenai/allennlp-models/blob/main/allennlp_models/modelcards/rc-bidaf.json
@@ -207,7 +209,8 @@ class BidirectionalAttentionFlowDistill(BidirectionalAttentionFlow):
                                               mask_lstms = copy.deepcopy(model._mask_lstms),
                                               regularizer = copy.deepcopy(model._regularizer),
                                               distill_weight = distill_weight,
-                                              temperature = temperature
+                                              temperature = temperature,
+                                              reduction = reduction
                                               )
 
         distill_model._highway_layer = copy.deepcopy(model._highway_layer)

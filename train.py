@@ -250,6 +250,7 @@ if __name__=="__main__":
     parser.add_argument("--distill", action="store_true")
     parser.add_argument("--distill_weight", type=float, default=0.5)
     parser.add_argument("--temperature", type=float, default=1)
+    parser.add_argument("--reduction", default="mean")
 
     parser.add_argument("--distill_data_file", default="train-spacy-logits.csv")
 
@@ -270,6 +271,7 @@ if __name__=="__main__":
     distill = args.distill
     distill_weight = args.distill_weight
     temperature = args.temperature
+    reduction = args.reduction
 
     distill_data_path = os.path.join(data_dir, args.distill_data_file)
 
@@ -287,7 +289,7 @@ if __name__=="__main__":
     # load pretrained model
     print("Loading model")
     if distill:
-        model = BidirectionalAttentionFlowDistill.from_pretrained(distill_weight, temperature)
+        model = BidirectionalAttentionFlowDistill.from_pretrained(distill_weight, temperature, reduction)
     else:
         bidaf_pred = pretrained.load_predictor("rc-bidaf")
         model = bidaf_pred._model
