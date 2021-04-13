@@ -68,12 +68,12 @@ def init_weights(m):
                 initializer(p, -1*k**0.5, k**0.5)
 
 data_dir = "data/"
-data_path = os.path.join(data_dir, "traindata-small.json")
+data_path = os.path.join(data_dir, "train-spacy-logits-small.csv")
 # 
 # pdb.set_trace()
 # 
 token_indexers = {'token_characters': TokenCharactersIndexer(), 'tokens': SingleIdTokenIndexer()}
-dataset_reader = SquadReader.squad1(token_indexers=token_indexers)
+dataset_reader = SquadReaderDistill.squad1(token_indexers=token_indexers)
 # 
 # print("reading data")
 # tic = time.time()
@@ -105,7 +105,7 @@ instance_list = [i for i in instances]
 
 # load model and try evaluating one batch
 
-mdl = BidirectionalAttentionFlowDistill.from_pretrained()
+mdl = BidirectionalAttentionFlowDistill.from_pretrained(temperature=10, reduction="sum")
 
 pdb.set_trace()
 

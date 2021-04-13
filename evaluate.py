@@ -47,6 +47,9 @@ if __name__=="__main__":
 
     parser.add_argument("--use_pretrained", action="store_true")
 
+    parser.add_argument("--save_predictions", action="store_true")
+    parser.add_argument("--predictions_output_file", default="predictions.json")
+
     args = parser.parse_args()
 
     # define parameters
@@ -64,6 +67,11 @@ if __name__=="__main__":
     cuda_device = args.cuda_device
 
     use_pretrained = args.use_pretrained
+
+    if args.save_predictions:
+        predictions_file = os.path.join(save_dir, args.predictions_output_file)
+    else:
+        predictions_file = None
 
     # download data and load
     _, dev_data_path = download_data(data_dir, squad_ver)
@@ -85,7 +93,10 @@ if __name__=="__main__":
 
     # load trained model
     if not use_pretrained:
-        model.load_state_dict(torch.load(model_path))
+        if cuda_device < 0:
+            model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
+        else:
+            model.load_state_dict(torch.load(model_path))
 
     # move to gpu if using
     if cuda_device >= 0:
@@ -94,7 +105,7 @@ if __name__=="__main__":
     # evaluate trained model
     print("Evaluating")
     tic = time.time()
-    results = evaluate(model, dev_loader, cuda_device, output_file=None, predictions_output_file=None)
+    results = evaluate(model, dev_loader, cuda_device, output_file=None, predictions_output_file=predictions_file)
     print("Time elapsed:", time.time()-tic)
 
     # pdb.set_trace()
