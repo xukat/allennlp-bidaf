@@ -191,6 +191,7 @@ def build_trainer(
     optimizer = AdamOptimizer(parameters, lr=learning_rate)  # type: ignore
     trainer = GradientDescentTrainer(
         model=model,
+        checkpointer = Checkpointer(serialization_dir, num_serialized_models_to_keep=-1),
         serialization_dir=serialization_dir,
         data_loader=train_loader,
         validation_data_loader=dev_loader,
