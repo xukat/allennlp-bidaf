@@ -18,6 +18,7 @@ from allennlp.data import (
 from allennlp.models import Model
 from allennlp.training.trainer import GradientDescentTrainer, Trainer
 from allennlp.training.optimizers import AdamOptimizer
+from allennlp.training.checkpointer import Checkpointer
 
 from allennlp.data.tokenizers import Token, Tokenizer, SpacyTokenizer
 
