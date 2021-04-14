@@ -57,10 +57,14 @@ def metric_max_over_ground_truths(metric_fn, prediction, ground_truths):
     return max(scores_for_ground_truths)
 
 
-def evaluate(dataset, predictions):
-    model_path = 'outputs/outputs/distillweight0.0_temperature1_epochs5/model_state_epoch_4.th'
+def evaluate(dataset, model_path, cuda_device=-1):
     predictor = pretrained.load_predictor("rc-bidaf")
-    predictor._model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
+    if cuda_device < 0:
+        predictor._model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
+    else:
+        predictor._model.load_state_dict(torch.load(model_path))
+        model.cuda(cuda_device)
+
     f1 = exact_match = total = 0
     idx = 0
     tic = time.time()
@@ -68,13 +72,7 @@ def evaluate(dataset, predictions):
         for paragraph in article['paragraphs']:
             for qa in paragraph['qas']:
                 total += 1
-                # if qa['id'] not in predictions:
-                #     message = 'Unanswered question ' + qa['id'] + \
-                #               ' will receive score 0.'
-                #     print(message, file=sys.stderr)
-                #     continue
                 ground_truths = list(map(lambda x: x['text'], qa['answers']))
-                # prediction = predictions[qa['id']]
                 prediction = predictor.predict(qa['question'], paragraph['context'])
                 exact_match += metric_max_over_ground_truths(
                     exact_match_score, prediction['best_span_str'], ground_truths)
@@ -96,7 +94,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Evaluation for SQuAD ' + expected_version)
     parser.add_argument('dataset_file', help='Dataset file')
-    parser.add_argument('prediction_file', help='Prediction File')
+    parser.add_argument('model_path', help='Model weights')
     args = parser.parse_args()
     with open(args.dataset_file) as dataset_file:
         dataset_json = json.load(dataset_file)
@@ -105,6 +103,4 @@ if __name__ == '__main__':
                   ', but got dataset with v-' + dataset_json['version'],
                   file=sys.stderr)
         dataset = dataset_json['data']
-    with open(args.prediction_file) as prediction_file:
-        predictions = json.load(prediction_file)
-    print(json.dumps(evaluate(dataset, predictions)))
+    print(json.dumps(evaluate(dataset, args.model_path)))
