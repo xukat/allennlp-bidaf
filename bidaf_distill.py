@@ -10,6 +10,7 @@ from allennlp.nn import util, InitializerApplicator, RegularizerApplicator
 from allennlp_models import pretrained
 from allennlp_models.rc.models import BidirectionalAttentionFlow
 from allennlp_models.rc.dataset_readers import SquadReader
+from allennlp.common.tqdm import Tqdm
 
 from allennlp.common.file_utils import cached_path
 
@@ -247,10 +248,10 @@ class SquadReaderDistill(SquadReader):
         count_total = 0
         count_mismatch = 0
         random_logits = False
-
-        # loop through data and convert each data point to an Instance
         # generates an iterable of Instances 
-        for i, datapoint in dataset.iterrows():
+        generator_tqdm = Tqdm.tqdm(dataset.iterrows())
+        for i, datapoint in generator_tqdm:
+        # for i, datapoint in dataset.iterrows():
             count_total += 1
             try:
                 # context
