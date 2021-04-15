@@ -35,6 +35,7 @@ from bidaf_distill import BidirectionalAttentionFlowDistill, SquadReaderDistill
 from allennlp.modules.token_embedders import Embedding
 from allennlp.modules.matrix_attention import LinearMatrixAttention
 import torch
+import pickle
 
 def download_data(data_dir, squad_ver):
     """
@@ -256,8 +257,8 @@ if __name__=="__main__":
 
     parser.add_argument("--distill_data_file", default="train-spacy-logits.csv")
 
-    parser.add_argument("--from_scratch", action="store_true"
-                       )
+    parser.add_argument("--from_scratch", action="store_true")
+    parser.add_argument("--save_data_pickle", action="store_true")
     args = parser.parse_args()
 
     # define parameters
@@ -288,6 +289,11 @@ if __name__=="__main__":
     train_data, dev_data = load_data(train_data_path, dev_data_path, squad_ver, distill)
     train_loader, dev_loader = build_data_loaders(train_data, dev_data, batch_size)
 
+    if args.save_data_pickle:
+        pickle.dump(train_data, open("train_spacy_logits_max.pk", 'wb'))
+        pdb.set_trace()
+        import sys
+        sys.exit()
     # load pretrained model
     print("Loading model")
     if distill:
