@@ -63,7 +63,9 @@ def evaluate(dataset, model_path, cuda_device=-1):
         predictor._model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
     else:
         predictor._model.load_state_dict(torch.load(model_path))
-        model.cuda(cuda_device)
+        predictor._model.cuda(cuda_device)
+
+    predictor._model.eval()
 
     f1 = exact_match = total = 0
     idx = 0
@@ -73,13 +75,16 @@ def evaluate(dataset, model_path, cuda_device=-1):
             for qa in paragraph['qas']:
                 total += 1
                 ground_truths = list(map(lambda x: x['text'], qa['answers']))
-                prediction = predictor.predict(qa['question'], paragraph['context'])
+
+                with torch.no_grad():
+                    prediction = predictor.predict(qa['question'], paragraph['context'])
+
                 exact_match += metric_max_over_ground_truths(
                     exact_match_score, prediction['best_span_str'], ground_truths)
                 f1 += metric_max_over_ground_truths(
                     f1_score, prediction['best_span_str'], ground_truths)
 
-        print("Article {}/{}, exact_match: {}, f1: {}".format(idx, len(dataset), 100.0*exact_match/total, 100.0*f1/total))
+        print("Article {}/{}, exact_match: {}, f1: {}, time: {}".format(idx, len(dataset), 100.0*exact_match/total, 100.0*f1/total, time.time()-tic))
         idx += 1
 
     time_elapsed = time.time() - tic
